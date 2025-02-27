@@ -41,7 +41,11 @@ const auth = (req, res, next) => {
 const isAdmin = async (req, res, next) => {
   try {
     const user = await knex('users').where({ id: req.user.id }).first();
-    if (user.role === "admin") {
+
+    const lookupData = await getLookupLists(knex, user.roleId);
+    const role = lookupData?.userRole?.value ? lookupData.userRole.value : null
+
+    if (role === "admin") {
       next();
     } else {
       return res.status(401).send({
@@ -58,4 +62,4 @@ const isAdmin = async (req, res, next) => {
   }
 }
 
-module.exports = { auth, isAdmin }
+module.exports = { auth, isAdmin, }
