@@ -20,6 +20,7 @@ router.put("/update/personal/info",
         .isNumeric(),
     check('dob', 'Date of birth is required.').notEmpty(),
     check('dob', 'Enter a valid date of birth (YYYY-MM-DD).').isDate(),
+    check('gender', 'Enter a valid gender ID').isInt(),
     check('marital', 'Enter a valid marital ID').isInt(),
     check('bloodGroup', 'Enter a valid blood group ID').isInt(),
     auth, updateUserPersonalInfo

@@ -47,6 +47,11 @@ const getUserDetails = TryCatch(async (req, res, next) => {
                 value: empInfo?.dob ? formatDate(empInfo.dob) : null,
                 isEditable: true
             },
+            gender: {
+                value: empInfo?.gender ? capitalizeFirstLetter(findValueFromLookupList(lookupData.genderOptions, empInfo.gender)) : null,
+                ddValue: lookupData.genderOptions,
+                isEditable: true
+            },
             marital: {
                 value: persInfo?.marital ? capitalizeFirstLetter(findValueFromLookupList(lookupData.maritalStatusOptions, persInfo.marital)) : null,
                 ddValue: lookupData.maritalStatusOptions,
@@ -192,7 +197,7 @@ const updateUserPersonalInfo = TryCatch(async (req, res, next) => {
         return res.status(400).json({ status: "fail", message: errors.array()[0].msg, });
     }
 
-    const { aadhaarNo, pan, marital, bloodGroup, phone, dob } = req.body;
+    const { aadhaarNo, pan, marital, bloodGroup, phone, dob, gender } = req.body;
     const userId = req.user.id;
 
     const user = await knex("emp_info").where({ id: userId }).first();
@@ -201,6 +206,11 @@ const updateUserPersonalInfo = TryCatch(async (req, res, next) => {
     }
 
     const lookupData = await getLookupLists(knex, user.roleId);
+    const genderValue = findValueFromLookupList(lookupData.genderOptions, gender);
+    if (!genderValue) {
+        return next(new ErrorHandler("Invalid gender provided. Please select a valid option.", 400));
+    }
+
     const maritalStatusValue = findValueFromLookupList(lookupData.maritalStatusOptions, marital);
     if (!maritalStatusValue) {
         return next(new ErrorHandler("Invalid marital status provided. Please select a valid option.", 400));
@@ -212,6 +222,7 @@ const updateUserPersonalInfo = TryCatch(async (req, res, next) => {
     }
 
     const userDetail = {
+        gender,
         phone,
         dob,
     };
@@ -254,13 +265,18 @@ const updateUserPersonalInfo = TryCatch(async (req, res, next) => {
             value: formatDate(dob),
             isEditable: true
         },
+        gender: {
+            value: capitalizeFirstLetter(genderValue),
+            ddValue: lookupData.genderOptions,
+            isEditable: true
+        },
         marital: {
-            value: maritalStatusValue,
+            value: capitalizeFirstLetter(maritalStatusValue),
             ddValue: lookupData.maritalStatusOptions,
             isEditable: true
         },
         bloodGroup: {
-            value: relationValue,
+            value: capitalizeFirstLetter(relationValue),
             ddValue: lookupData.bloodGroupOptions,
             isEditable: true
         }
