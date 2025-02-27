@@ -103,6 +103,39 @@ const formatDate = (dateString) => {
     return moment(dateString).format('YYYY-MM-DD');
 }
 
+const getLookupLists = async (knex, roleId) => {
+    const lookupTypes = [
+        { key: 'maritalStatusOptions', type: 'marital' },
+        { key: 'bloodGroupOptions', type: 'bloodGroup' },
+        { key: 'degreeOptions', type: 'degree' },
+        { key: 'universityOptions', type: 'university' },
+        { key: 'stateOptions', type: 'state' },
+        { key: 'addressTypeOptions', type: 'addrtype' },
+        { key: 'relationOptions', type: 'relation' },
+        { key: 'genderOptions', type: 'gender' },
+    ];
+
+    const lookupPromises = lookupTypes.map(({ key, type }) =>
+        knex('commonLookup').select('id', 'code as value').where('type', type)
+            .then(data => ({ [key]: data }))
+    );
+
+    const userRolePromise = knex('commonLookup')
+        .select('code as value')
+        .where({ type: 'role', id: roleId })
+        .first()
+        .then(role => ({ userRole: role }));
+
+    // Execute all queries in parallel
+    const results = await Promise.all([...lookupPromises, userRolePromise]);
+
+    // Merge results into a single object
+    return Object.assign({}, ...results);
+};
+
+// Extract Values Using Lookup Lists
+const findValueFromLookupList = (list, id) => id ? list.find(item => item.id === id)?.value || null : null;
+
 module.exports = {
     hashPassword,
     comparePassword,
@@ -113,5 +146,7 @@ module.exports = {
     compile,
     generateCoCode,
     capitalizeFirstLetter,
-    formatDate  
+    formatDate,
+    getLookupLists,
+    findValueFromLookupList
 }

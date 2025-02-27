@@ -3,7 +3,7 @@ const { check, query } = require('express-validator');
 const { auth } = require('../middleware/auth')
 const router = express.Router();
 
-const { getUserDetails, updateUserPersonalInfo, updateUserEducationInfo, updateUserFamilyInfo } = require("../controllers/user")
+const { getUserDetails, updateUserPersonalInfo, updateUserFamilyInfo, updateUserAddressInfo, updateUserEducationInfo, updateUserExperienceInfo, } = require("../controllers/user")
 
 router.get("/details", auth, getUserDetails)
 
@@ -25,6 +25,32 @@ router.put("/update/personal/info",
     auth, updateUserPersonalInfo
 );
 
+router.put("/update/family/info",
+    check('relationship', 'Enter a valid relationship ID').isInt(),
+    check('firstName', 'First name is required.').notEmpty(),
+    check('middleName', 'Middle name is required.').notEmpty(),
+    check('lastName', 'Last name is required.').notEmpty(),
+    check('phone', 'Phone number is required.').notEmpty(),
+    check('phone', 'Phone number must be exactly 10 digits.')
+        .isLength({ min: 10, max: 10 })
+        .isNumeric(),
+    auth, updateUserFamilyInfo
+);
+
+router.put("/update/address/info",
+    check('addrType', 'Enter a address type ID').isInt(),
+    check('addr1', 'Address Line 1 is required.').notEmpty(),
+    check('addr2', 'Address Line 2 is required.').notEmpty(),
+    check('addr3', 'Address Line 3 is required.').notEmpty(),
+    check('city', 'City name is required.').notEmpty(),
+    check('state', 'Enter a valid state ID').isInt(),
+    check('pincode', 'PIN code is required.').notEmpty(),
+    check('pincode', 'PIN code must be exactly 6 digits.')
+        .isLength({ min: 6, max: 6 })
+        .isNumeric(),
+    auth, updateUserAddressInfo
+);
+
 router.put("/update/education/info",
     check('degree', 'Enter a valid degree ID').isInt(),
     check('college', 'College name is required.').notEmpty(),
@@ -42,16 +68,20 @@ router.put("/update/education/info",
     auth, updateUserEducationInfo
 );
 
-router.put("/update/family/info",
-    check('relationship', 'Enter a valid relationship ID').isInt(),
-    check('firstName', 'First name is required.').notEmpty(),
-    check('middleName', 'Middle name is required.').notEmpty(),
-    check('lastName', 'Last name is required.').notEmpty(),
-    check('phone', 'Phone number is required.').notEmpty(),
-    check('phone', 'Phone number must be exactly 10 digits.')
-        .isLength({ min: 10, max: 10 })
+router.put("/update/experience/info",
+    check('name', 'Company name is required.').notEmpty(),
+    check('role', 'Role is required.').notEmpty(),
+    check('city', 'City name is required.').notEmpty(),
+    check('state', 'Enter a valid state ID').isInt(),
+    check('pincode', 'PIN code is required.').notEmpty(),
+    check('pincode', 'PIN code must be exactly 6 digits.')
+        .isLength({ min: 6, max: 6 })
         .isNumeric(),
-    auth, updateUserFamilyInfo
+    check('startYear', 'Start date is required.').notEmpty(),
+    check('startYear', 'Invalid start date format. Please use YYYY-MM-DD.').isDate(),
+    check('endYear', 'End date is required.').notEmpty(),
+    check('endYear', 'Invalid end date format. Please use YYYY-MM-DD.').isDate(),
+    auth, updateUserExperienceInfo
 );
 
 module.exports = router

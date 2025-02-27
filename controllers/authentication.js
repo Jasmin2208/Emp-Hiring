@@ -1,7 +1,7 @@
 const { validationResult } = require("express-validator");
 const { knex } = require("../database/db");
 const { ErrorHandler, TryCatch } = require("../middleware/error");
-const { hashPassword, comparePassword, response, compile, sendMailAsync, } = require("../helpers/helper");
+const { hashPassword, comparePassword, response, compile, sendMailAsync, formatDate, getLookupLists, capitalizeFirstLetter, findValueFromLookupList, } = require("../helpers/helper");
 const jwt = require("jsonwebtoken");
 
 const loginUser = TryCatch(async (req, res, next) => {
@@ -12,21 +12,32 @@ const loginUser = TryCatch(async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await knex("emp_info").where({ email: email }).first();
+    const user = await knex("emp_info").where({ email }).first();
     if (!user) {
+        return next(new ErrorHandler("Invalid email or password.", 401));
+    }
+
+    const isPasswordValid = await comparePassword(password, user.password);
+    if (!isPasswordValid) {
         return next(new ErrorHandler("You have entered an Incorrect Email or Password.", 401));
     }
 
-    const match = await comparePassword(password, user.password);
-    if (!match) {
-        return next(new ErrorHandler("You have entered an Incorrect Email or Password.", 401));
-    }
+    const lookupData = await getLookupLists(knex, user.roleId);
 
-    const sanitizedUser = (({ password, ...rest }) => rest)(user);
+    const { password: _, ...sanitizedUser } = user;
 
-    const token = jwt.sign({ user: sanitizedUser }, process.env.JWT_SECRET_KEY, { expiresIn: "365 days", });
+    const loginUserDetails = {
+        ...sanitizedUser,
+        gender: sanitizedUser.gender ? capitalizeFirstLetter(findValueFromLookupList(lookupData.genderOptions, sanitizedUser.gender)) : null,
+        doj: sanitizedUser.doj ? formatDate(sanitizedUser.doj) : null,
+        dos: sanitizedUser.dos ? formatDate(sanitizedUser.dos) : null,
+        dob: sanitizedUser.dob ? formatDate(sanitizedUser.dob) : null,
+        role: lookupData?.userRole?.value ? capitalizeFirstLetter(lookupData.userRole.value) : null
+    };
 
-    response(res, 200, false, "Login successfully!", { user: sanitizedUser, token });
+    const token = jwt.sign({ user: loginUserDetails }, process.env.JWT_SECRET_KEY, { expiresIn: "365d" });
+
+    return response(res, 200, false, "Login successful!", { user: loginUserDetails, token });
 });
 
 const registerUser = TryCatch(async (req, res, next) => {
